@@ -22,6 +22,7 @@ import com.codahale.metrics.SharedMetricRegistries
 import com.codahale.metrics.annotation.Gauge
 import com.codahale.metrics.annotation.Metered
 import com.codahale.metrics.annotation.Timed
+import com.codahale.metrics.graphite.Graphite
 import groovy.json.JsonSlurper
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -73,6 +74,7 @@ class MetricsSpec extends RatpackGroovyDslSpec {
         .jmx()
         .csv { it.reportDirectory(reportDirectory.root).reporterInterval(Duration.ofSeconds(1)) }
         .console { it.reporterInterval(Duration.ofSeconds(1)) }
+        .graphite { it.enable().sender(new Graphite("localhost", 2003)).reporterInterval(Duration.ofSeconds(1)) }
       }
     }
     handlers { MetricRegistry metrics ->
