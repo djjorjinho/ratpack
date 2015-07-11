@@ -40,6 +40,7 @@ import java.io.File;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.inject.Scopes.SINGLETON;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -685,6 +686,12 @@ public class CodaHaleMetricsModule extends ConfigurableModule<CodaHaleMetricsMod
       private GraphiteSender sender;
       private boolean enabled = true;
 
+      private String includeFilter;
+      private String excludeFilter;
+      private String prefix;
+      private TimeUnit rateUnit;
+      private TimeUnit durationUnit;
+
       /**
        * The state of the Graphite publisher.
        *
@@ -753,6 +760,106 @@ public class CodaHaleMetricsModule extends ConfigurableModule<CodaHaleMetricsMod
         this.sender = sender;
         return this;
       }
+
+      /**
+       * The state of the inclusion metric filter
+       *
+       * @return the inclusion filter
+       */
+      public String getIncludeFilter() {
+        return includeFilter;
+      }
+
+      /**
+       * Only report metrics which match the given filter.
+       *
+       * @param includeFilter a {@link MetricFilter}
+       * @return {@code this}
+       */
+      public Graphite includeFilter(String includeFilter) {
+        this.includeFilter = includeFilter;
+        return this;
+      }
+
+      /**
+       * The state of the exclusion metric filter
+       *
+       * @return the exclusion filter
+       */
+      public String getExcludeFilter() {
+        return excludeFilter;
+      }
+
+      /**
+       * Do not report metrics which match the given filter.
+       *
+       * @param excludeFilter a {@link MetricFilter}
+       * @return {@code this}
+       */
+      public Graphite excludeFilter(String excludeFilter) {
+        this.excludeFilter = excludeFilter;
+        return this;
+      }
+
+      /**
+       * The state of the metric name prefix
+       *
+       * @return the metric prefix value
+       */
+      public String getPrefix() {
+        return prefix;
+      }
+
+      /**
+       * Prefix all metric names with the given string.
+       *
+       * @param prefix the prefix for all metric names
+       * @return {@code this}
+       */
+      public Graphite prefix(String prefix) {
+        this.prefix = prefix;
+        return this;
+      }
+
+      /**
+       * The state of rate conversion
+       *
+       * @return the rate conversion unit
+       */
+      public TimeUnit getRateUnit() {
+        return rateUnit;
+      }
+
+      /**
+       * Convert rates to the given time unit.
+       *
+       * @param rateUnit a unit of time
+       * @return {@code this}
+       */
+      public Graphite rateUnit(TimeUnit rateUnit) {
+        this.rateUnit = rateUnit;
+        return this;
+      }
+
+      /**
+       * The state of duration conversion
+       *
+       * @return the duration conversion unit
+       */
+      public TimeUnit getDurationUnit() {
+        return durationUnit;
+      }
+
+      /**
+       * Convert durations to the given time unit.
+       *
+       * @param durationUnit a unit of time
+       * @return {@code this}
+       */
+      public Graphite durationUnit(TimeUnit durationUnit) {
+        this.durationUnit = durationUnit;
+        return this;
+      }
     }
 
   }
@@ -816,7 +923,7 @@ public class CodaHaleMetricsModule extends ConfigurableModule<CodaHaleMetricsMod
 
       config.getGraphite().ifPresent(graphite -> {
         if (graphite.isEnabled()) {
-          injector.getInstance(CsvReporter.class).start(graphite.getReporterInterval().getSeconds(), SECONDS);
+          injector.getInstance(GraphiteReporter.class).start(graphite.getReporterInterval().getSeconds(), SECONDS);
         }
       });
 

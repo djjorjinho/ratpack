@@ -25,6 +25,9 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import java.util.Optional;
 
+/**
+ * A Provider implementation that sets up a {@link GraphiteReporter} for a {@link MetricRegistry}.
+ */
 public class GraphiteReporterProvider implements Provider<GraphiteReporter> {
 
   private final MetricRegistry metricRegistry;
@@ -38,12 +41,30 @@ public class GraphiteReporterProvider implements Provider<GraphiteReporter> {
 
   @Override
   public GraphiteReporter get() {
-    GraphiteReporter.Builder builder = GraphiteReporter.forRegistry(metricRegistry);
     Optional<Graphite> graphite = config.getGraphite();
     boolean enabled = graphite.map(Graphite::isEnabled).orElse(false);
-    if (enabled) {
-      return builder.build(graphite.get().getSender());
+    if (!enabled) {
+      return null;
     }
-    return null;
+    GraphiteReporter.Builder builder = GraphiteReporter.forRegistry(metricRegistry);
+    graphite.ifPresent(input -> {
+      if (input.getIncludeFilter() != null || input.getExcludeFilter() != null) {
+        builder.filter(new RegexMetricFilter(input.getIncludeFilter(), input.getExcludeFilter()));
+      }
+
+      if (input.getPrefix() != null) {
+        builder.prefixedWith(input.getPrefix());
+      }
+
+      if (input.getDurationUnit() != null) {
+        builder.convertDurationsTo(input.getDurationUnit());
+      }
+
+      if (input.getRateUnit() != null) {
+        builder.convertRatesTo(input.getRateUnit());
+      }
+
+    });
+    return builder.build(graphite.get().getSender());
   }
 }
